@@ -2,13 +2,15 @@ import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import * as express from 'express';
+import type { Express } from 'express';
 import { AppModule } from '../src/app.module';
 
-let cachedServer: express.Express | null = null;
+let cachedServer: Express | null = null;
 
 async function createServer() {
-  const server = express();
+  const expressModule = await import('express');
+  const expressFactory = (expressModule.default ?? expressModule) as unknown as () => Express;
+  const server = expressFactory();
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
 
   app.enableCors({
@@ -29,9 +31,7 @@ async function createServer() {
 }
 
 export default async function handler(req: any, res: any) {
-  if (!cachedServer) {
-    cachedServer = await createServer();
-  }
-
-  return cachedServer(req, res);
+  const server = cachedServer ?? (await createServer());
+  cachedServer = server;
+  return server(req, res);
 }
