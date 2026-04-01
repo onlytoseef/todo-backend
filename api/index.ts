@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import type { Express } from 'express';
 import { AppModule } from '../src/app.module';
+import { getCorsOptions } from '../src/common/utils/cors.util';
 
 let cachedServer: Express | null = null;
 
@@ -13,10 +14,7 @@ async function createServer() {
   const server = expressFactory();
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
 
-  app.enableCors({
-    origin: process.env.FRONTEND_ORIGIN?.split(',') ?? '*',
-    credentials: true,
-  });
+  app.enableCors(getCorsOptions());
 
   app.useGlobalPipes(
     new ValidationPipe({
